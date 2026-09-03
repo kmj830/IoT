@@ -1,0 +1,53 @@
+# 강의계획서 및 문서 파일
+강의계획서.pdf
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 가상환경 (Virtual Environments)
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# 환경 변수 및 시크릿 설정
+.env
+.env.local
+*.secret
+
+# Flask & 웹 연동
+instance/
+.webassets-cache
+
+# IDE 및 에디터 설정
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+
+# 운영체제 (OS) 파일
+.DS_Store
+Thumbs.db
