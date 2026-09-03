@@ -1,0 +1,36 @@
+name: Python & Web CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: 문법 검사 및 기본 구동 테스트
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 체크아웃
+      uses: actions/checkout@v4
+
+    - name: Python 3.11 설정
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: 의존성 패키지 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: 파이썬 구문 에러 검사 (Flake8)
+      run: |
+        # 문법 에러(E9), 미정의 변수(F82) 등 실행 불가능한 오류 감지
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Flask 웹 서버 모듈 import 검증
+      run: |
+        python -c "import web.app; print('✅ Flask 웹 모듈 정상 로드 완료')"
