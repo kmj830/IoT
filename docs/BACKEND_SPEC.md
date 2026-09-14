@@ -1,4 +1,4 @@
-# ☁️ PawCare IoT 100% 무료 클라우드 백엔드 아키텍처 및 시스템 설계 기획서
+# ☁️ 멍메이트(DogMate) IoT 100% 무료 클라우드 백엔드 아키텍처 및 시스템 설계 기획서
 > **과목**: 국립금오공과대학교 2026-2 IoT기초설계  
 > **팀원**: 김민중, 김영재  
 > **인프라**: GCP (Cloud Run, GCS, FCM) + Supabase (PostgreSQL 15)  
@@ -27,7 +27,7 @@
 |  Cloud Backend Infrastructure (100% Free Tier Architecture)                                       |
 |  ├── [Compute Server]  Google Cloud Run (Docker Containerized FastAPI / Flask, 월 200만 회 무료)   |
 |  ├── [Cloud Database]  Supabase Managed PostgreSQL 15 (500MB 용량 평생 무료, 실시간 텔레메트리 DB)     |
-|  ├── [Object Storage]  Google Cloud Storage (GCS Bucket: gs://pawcare-event-captures/, 월 5GB 무료)   |
+|  ├── [Object Storage]  Google Cloud Storage (GCS Bucket: gs://dogmate-event-captures/, 월 5GB 무료)   |
 |  └── [Push Messaging]  Firebase Cloud Messaging (FCM) (실시간 이상 짖음 발생 시 스마트폰 무료 푸시)        |
 +===================================================================================================+
        ↕ (양방향 WebSocket: /ws/device/{id} & HTTPS REST: /api/v1/devices/telemetry)
