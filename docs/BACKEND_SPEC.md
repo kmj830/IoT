@@ -1,36 +1,36 @@
-# ☁️ PawCare IoT 구글 클라우드(GCP) 백엔드 아키텍처 및 시스템 설계 기획서
+# ☁️ PawCare IoT 100% 무료 클라우드 백엔드 아키텍처 및 시스템 설계 기획서
 > **과목**: 국립금오공과대학교 2026-2 IoT기초설계  
 > **팀원**: 김민중, 김영재  
-> **인프라**: Google Cloud Platform (GCP) + Raspberry Pi 3 Model B V1.2  
-> **문서 버전**: v2.0 (Google Cloud-Native 3-Tier 전환 개정판)
+> **인프라**: GCP (Cloud Run, GCS, FCM) + Supabase (PostgreSQL 15)  
+> **운영 비용**: **월 0원 (Always Free & 크레딧 차감 0원 설계)**  
+> **문서 버전**: v2.1 ($0 Zero-Cost Enterprise 3-Tier)
 
 ---
 
-## 📌 1. GCP 클라우드 백엔드 설계 개요 및 원칙
+## 📌 1. 100% 무료 클라우드 백엔드 설계 개요 및 원칙
 
-라즈베리파이 로컬 저장(SQLite)의 한계를 탈피하여, **Google Cloud Platform(GCP)** 기반의 **완전한 엔터프라이즈 3-Tier 클라우드 IoT 아키텍처**를 구축합니다.  
-라즈베리파이(Edge)는 센서 수집 및 YAMNet AI에만 전념하고, 비즈니스 로직·PostgreSQL DB·GCS 스토리지·FCM 푸시 알림은 **GCP 서버리스 클라우드**가 전담합니다.
+유료 과금 위험이 있는 `Cloud SQL`을 평생 완전 무료인 **Supabase (PostgreSQL 15)**로 대체하고, 서버(**Google Cloud Run**), 파일 저장소(**Google Cloud Storage**), 푸시 알림(**Firebase FCM**)은 구글 공식 **Always Free 티어**를 적용하여 **크레딧 차감 0원, 실제 카드 결제 0원의 엔터프라이즈 3-Tier 클라우드 IoT 백엔드**를 구축합니다.
 
-* **실제 상용 스마트홈 아키텍처 (SmartThings/Google Home 동급)**: 집 밖(LTE/5G)에서도 언제든 완벽하게 접속 및 제어 가능한 진정한 원격 IoT 시스템 구축.
-* **RPi 3B 컴퓨팅 자원 완전 해방**: 웹 서버 부하 및 DB 트랜잭션을 GCP로 이관하여, 라즈베리파이 3B(1GB RAM)의 메모리 고갈과 발열을 원천 차단하고 오디오 AI(YAMNet) 연산에 100% 집중.
-* **Google AIoT 네이티브 시너지**: 엣지 AI 모델(**Google YAMNet**) + 푸시 알림(**Firebase Cloud Messaging**) + 클라우드 서버(**GCP Cloud Run**)로 이어지는 완벽한 구글 기술 스택 통일.
-* **안정적인 파일 분리 저장**: SD카드 수명을 단축시키는 사진 저장 대신, 전 세계 표준 객체 스토리지인 **Google Cloud Storage (GCS)**에 안전하게 영구 적재.
+* **과금 위험 제로 (100% Zero-Cost)**: 구글 클라우드의 영구 무료 티어(Always Free)와 Supabase 무료 플랜(500MB DB)을 조합하여 학기 내내 단 1원의 추가 비용도 발생하지 않도록 설계.
+* **엔터프라이즈 3-Tier 분리 구축**: 라즈베리파이(Edge)는 센서 수집 및 YAMNet AI에만 전념하고, 비즈니스 로직 및 DB 연산은 외부 클라우드가 전담하여 RPi 3B(1GB RAM)의 메모리 고갈 원천 차단.
+* **실제 상용 스마트홈(LTE/5G) 환경 완벽 지원**: 학교 Wi-Fi나 공유기 포트포워딩 없이도 외부 인터넷 어디서든 스마트폰으로 즉시 접속 및 원격 제어 가능.
+* **PostgreSQL 15 표준 정규화**: SQLite 파일 동시성 제약을 극복하고, 관계형 정합성과 시계열 센서 텔레메트리를 고속 인덱싱 쿼리.
 
 ---
 
-## 🏛️ 2. 전체 GCP 3-Tier 클라우드 시스템 계층 구조
+## 🏛️ 2. 전체 3-Tier 클라우드 시스템 계층 구조
 
 ```text
 [Client Layer] 보호자 스마트폰 모바일 앱 / 반응형 웹 브라우저 (LTE / 5G / Wi-Fi)
        ↕ (HTTPS REST API / WebSocket / Firebase FCM Push)
 +===================================================================================================+
-|  Google Cloud Platform (GCP) Backend Infrastructure                                               |
-|  ├── [Compute]        Google Cloud Run (Docker Containerized FastAPI / Flask, Auto-scaling)       |
-|  ├── [Database]       Google Cloud SQL for PostgreSQL (기기 정보, 센서 시계열, 짖음 이벤트, 급여 로그)  |
-|  ├── [Object Storage] Google Cloud Storage (GCS Bucket: gs://pawcare-event-captures/)            |
-|  └── [Messaging]      Firebase Cloud Messaging (FCM) (실시간 이상 짖음 발생 시 스마트폰 긴급 푸시 알림)   |
+|  Cloud Backend Infrastructure (100% Free Tier Architecture)                                       |
+|  ├── [Compute Server]  Google Cloud Run (Docker Containerized FastAPI / Flask, 월 200만 회 무료)   |
+|  ├── [Cloud Database]  Supabase Managed PostgreSQL 15 (500MB 용량 평생 무료, 실시간 텔레메트리 DB)     |
+|  ├── [Object Storage]  Google Cloud Storage (GCS Bucket: gs://pawcare-event-captures/, 월 5GB 무료)   |
+|  └── [Push Messaging]  Firebase Cloud Messaging (FCM) (실시간 이상 짖음 발생 시 스마트폰 무료 푸시)        |
 +===================================================================================================+
-       ↕ (양방향 WebSocket: /ws/device/{id} & HTTPS REST: /api/v1/telemetry)
+       ↕ (양방향 WebSocket: /ws/device/{id} & HTTPS REST: /api/v1/devices/telemetry)
 [Edge Device Layer] Raspberry Pi 3 Model B V1.2 (Linux Client Daemon)
        ├── 🧠 Edge AI       : Google YAMNet-TFLite (3.8MB, 오디오 짖음 분류 50ms 실시간 추론)
        ├── 📷 Vision         : Pi Camera (CSI) ➔ 짖음 감지 시 캡처 후 GCP GCS로 직접/중계 멀티파트 업로드
@@ -41,27 +41,26 @@
 
 ---
 
-## 🛠️ 3. GCP 인프라 및 기술 스택 상세 (GCP Tech Stack)
+## 🛠️ 3. 클라우드 컴포넌트별 무료 티어 및 비용 검증
 
-| GCP 컴포넌트 | 선정 기술 및 사양 | 선정 이유 및 세부 역할 |
-| :--- | :--- | :--- |
-| **Cloud Compute** | **Google Cloud Run** (또는 GCE e2-micro) | 서버리스 컨테이너(Docker), 요청 시 자동 확장, 월 200만 회 호출 무료, 초저비용 무중단 운영 |
-| **Cloud Database** | **Cloud SQL (PostgreSQL 15)**<br>*(또는 GCP VM 내 PostgreSQL)* | SQLite 파일 동시성 제약 해결, 관계형 정합성 및 시계열 센서 데이터(온습도/조도) 효율적 인덱싱 |
-| **Object Storage** | **Google Cloud Storage (GCS)** | 짖음 감지 사진 파일 전용 버킷, 고유 URL 발급 및 CDN 초고속 로딩, SD카드 쓰기 수명 보호 |
-| **Push Notification** | **Firebase Cloud Messaging (FCM)** | 구글 네이티브 푸시 서비스, 백그라운드 상태의 보호자 스마트폰으로 사진 포함 실시간 팝업 경보 |
-| **Real-time Comm** | **WebSocket (Socket.IO)** | 클라우드 ⇄ 라즈베리파이 간 영구 TCP 파이프 연결, 원격 [간식 주기] 명령 즉시 전달(지연 < 50ms) |
-| **Edge Runtime** | Python 3.10 + `tflite-runtime` | 라즈베리파이 3B 전용 엣지 클라이언트 데몬, 무거운 웹서버 부담 없이 센서 수집 및 YAMNet 전념 |
+| 컴포넌트 | 선정 서비스 및 사양 | 무료 티어 제공량 | 예상 월 비용 |
+| :--- | :--- | :--- | :---: |
+| **Cloud Compute** | **Google Cloud Run** | 월 200만 회 호출, 36만 GiB-초 vCPU 무료 | **$0 (0원)** |
+| **Cloud Database** | **Supabase (PostgreSQL 15)** | 500MB DB 용량 평생 무료 (Cloud SQL 대체) | **$0 (0원)** |
+| **Object Storage** | **Google Cloud Storage (GCS)** | 월 5GB 스토리지, 5,000회 쓰기 무료 | **$0 (0원)** |
+| **Push Notification** | **Firebase Cloud Messaging** | 무제한 푸시 알림 100% 무료 | **$0 (0원)** |
+| **Edge Runtime** | Raspberry Pi 3B (Linux Daemon) | 로컬 하드웨어 구동 (YAMNet TFLite) | **$0 (0원)** |
 
 ---
 
 ## ⚙️ 4. 엔드투엔드(End-to-End) 데이터 처리 파이프라인
 
 ### ① 엣지 ➔ 클라우드: 센서 텔레메트리 및 짖음 감지 업로드 파이프라인
-* **정기 텔레메트리 (60초 주기)**: 라즈베리파이가 온습도, 조도, 간식 잔여량(초음파 이동평균)을 수집하여 GCP Cloud Run 엔드포인트(`POST /api/v1/devices/telemetry`)로 배치 전송 ➔ Cloud SQL에 시계열 적재.
+* **정기 텔레메트리 (60초 주기)**: 라즈베리파이가 온습도, 조도, 간식 잔여량(초음파 이동평균)을 수집하여 GCP Cloud Run 엔드포인트(`POST /api/v1/devices/telemetry`)로 배치 전송 ➔ Supabase PostgreSQL에 시계열 적재.
 * **이상 짖음 긴급 이벤트**:
   1. Grove 사운드센서 70dB 감지 ➔ USB 마이크 0.975초 수집 ➔ **YAMNet TFLite 추론**.
   2. `Bark(71번)` 확률 0.35 이상 시 카메라 캡처 ➔ `POST /api/v1/devices/events/bark`로 이미지 멀티파트 전송.
-  3. GCP Cloud Run이 수신 이미지를 **Google Cloud Storage(GCS)**에 저장(URL 생성) ➔ Cloud SQL에 이벤트 기록.
+  3. GCP Cloud Run이 수신 이미지를 **Google Cloud Storage(GCS)**에 저장(URL 생성) ➔ Supabase DB에 이벤트 기록.
   4. GCP가 **Firebase Cloud Messaging(FCM)**을 트리거하여 보호자 스마트폰에 *"[경보] 반려견 짖음 감지! (사진 첨부)"* 푸시 발송.
 
 ### ② 클라우드 ➔ 엣지: 원격 제어 명령 (간식 투출 & Push-to-Talk 음성)
@@ -71,7 +70,7 @@
 
 ---
 
-## 🗄️ 5. 클라우드 데이터베이스(DB) 스키마 설계 (PostgreSQL on GCP)
+## 🗄️ 5. 클라우드 데이터베이스(DB) 스키마 설계 (PostgreSQL 15 on Supabase)
 
 ```sql
 -- 1. 디바이스 등록 및 상태 관리 테이블
@@ -133,20 +132,12 @@ CREATE TABLE feed_logs (
 
 ---
 
-## 🔒 7. 보안, 인증 및 비용 최적화 전략 (GCP Free-Tier $0 설계)
+## 🔒 7. 보안, 인증 및 비용 최적화 전략 (100% Free-Tier $0 설계)
 
 1. **IAM 서비스 계정 & Signed URL 보안**:
    * GCS 버킷을 퍼블릭으로 열지 않고, GCP Cloud Run이 인증된 사용자에게만 유효기간 15분의 **V4 서명된 URL(Signed URL)**을 발급하여 외부 유출 원천 차단.
    * 라즈베리파이는 안전한 `X-Device-Token` 헤더를 통해 GCP와 상호 인증.
-2. **GCP $0 비용 최적화 (Always Free & 크레딧 활용)**:
-   * **Cloud Run**: 월 200만 회 호출 및 36만 GiB-초 vCPU 무료 (프로젝트 사용량 100% 무료 범위 내 커버).
-   * **Cloud Storage (GCS)**: 월 5GB 스토리지 무료 (사진 1장당 150KB 기준 약 33,000장 보관 가능).
-   * **Firebase FCM**: 무제한 푸시 알림 100% 무료.
-
----
-
-## 🎯 8. 심사위원(교수님) 평가 어필 포인트
-
-* **소프트웨어 설계 역량 (25점 만점)**: 단순 아두이노/라즈베리파이 토이 프로젝트를 넘어선 **Google Cloud 기반 마이크로서비스(MSA) & Serverless 3-Tier 아키텍처** 설계.
-* **데이터 정합성 및 시계열 분석**: PostgreSQL 관계형 DB를 활용한 안정적인 텔레메트리 파이프라인 구축.
-* **하이브리드 신뢰성 (40점 만점)**: 클라우드 장애 시에도 라즈베리파이 엣지에서 자율 구동되는 결함 허용(Fault-tolerant) 메커니즘.
+2. **$0 무과금 안전장치**:
+   * **Cloud Run**: 인스턴스 최소 개수를 0개(`min-instances=0`)로 설정하여 요청이 없을 때 자원 점유율 0, 비용 0원 유지.
+   * **Supabase**: 신용카드 등록 없이 이메일 인증만으로 500MB 무료 DB 영구 사용 (초과 과금 원천 불가능).
+   * **GCS**: 무료 티어 리전(`us-central1`)에 버킷 생성하여 월 5GB 완전 무료 적용.
