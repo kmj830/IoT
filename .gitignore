@@ -37,8 +37,13 @@ venv.bak/
 
 # 환경 변수 및 시크릿 설정
 .env
-.env.local
+.env.*
+!.env.example
 *.secret
+secrets/
+*key*.json
+credentials*.json
+*.pem
 
 # Flask & 웹 연동
 instance/
