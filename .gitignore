@@ -1,6 +1,9 @@
-# 강의계획서 및 문서 파일
+# 강의계획서 파일
 강의계획서.pdf
-*.pdf
+
+# docs 폴더 내 문서 허용
+!docs/
+!docs/**
 
 # Python
 __pycache__/
@@ -15,7 +18,7 @@ downloads/
 eggs/
 .eggs/
 lib/
-lib64/
+lib64/0
 parts/
 sdist/
 var/
