@@ -10,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from flask_restx import Api, Resource, fields, reqparse
 from werkzeug.datastructures import FileStorage
 from dotenv import load_dotenv
@@ -522,8 +522,24 @@ class AppTelemetryHistory(Resource):
 
 
 # ==========================================
-# 4. 웹 메인 대시보드 (HTML 뷰)
+# 4. 웹 메인 대시보드 및 보안 미디어 스트리밍
 # ==========================================
+@app.route('/api/v1/app/photos/<path:blob_name>')
+def stream_photo(blob_name):
+    """
+    GCS 버킷의 비공개 반려견 캡처 사진을 안전하게 클라이언트로 스트리밍합니다.
+    버킷을 퍼블릭으로 노출하지 않고도 브라우저와 모바일 앱에서 즉시 열람 가능합니다.
+    """
+    try:
+        from web.storage import download_blob_bytes
+        img_bytes = download_blob_bytes(blob_name)
+        return Response(img_bytes, mimetype="image/jpeg", headers={
+            "Cache-Control": "public, max-age=3600"
+        })
+    except Exception as e:
+        return jsonify({"error": f"이미지를 불러올 수 없습니다: {str(e)}"}), 404
+
+
 @app.route('/')
 def index():
     """모니터링 웹 대시보드 및 Swagger 안내 메인 페이지"""

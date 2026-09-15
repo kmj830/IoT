@@ -37,9 +37,17 @@ def upload_bytes_to_gcs(data: bytes, destination_blob_name: str, content_type: s
     blob.upload_from_string(data, content_type=content_type)
     return destination_blob_name
 
+def download_blob_bytes(blob_name: str) -> bytes:
+    """GCS 버킷에서 비공개 오브젝트 바이트를 직접 다운로드합니다."""
+    client = get_storage_client()
+    bucket = client.bucket(GCS_BUCKET_NAME)
+    blob = bucket.blob(blob_name)
+    return blob.download_as_bytes()
+
 def generate_signed_url(blob_name: str, expiration_minutes: int = 15) -> str:
     """
-    비공개 GCS 오브젝트에 안전하게 임시 접근할 수 있는 v4 서명된 URL(Signed URL)을 생성합니다.
+    비공개 GCS 오브젝트에 안전하게 임시 접근할 수 있는 URL을 생성합니다.
+    (키 서명이 가능할 때는 v4 서명 URL 생성, 키가 없는 Cloud Run 환경에서는 보안 프록시 스트림 엔드포인트 반환)
     """
     if not blob_name:
         return ""
@@ -58,9 +66,8 @@ def generate_signed_url(blob_name: str, expiration_minutes: int = 15) -> str:
         )
         return url
     except Exception as e:
-        print(f"[GCS Signed URL Error] {e}")
-        # 서명 생성 실패 시 공용 URL 반환 폴백
-        return f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{blob_name}"
+        # Cloud Run 환경에서 비밀키 미마운트 시 백엔드 프록시 URL로 반환하여 정상 이미지 표시
+        return f"/api/v1/app/photos/{blob_name}"
 
 def check_storage_health() -> bool:
     """GCS 버킷 오브젝트 접근 권한 확인 (Storage Object Admin 호환)"""
