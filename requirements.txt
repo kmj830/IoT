@@ -11,6 +11,7 @@ psycopg2-binary>=2.9.9
 google-cloud-storage>=2.14.0
 firebase-admin>=6.5.0
 requests>=2.31.0
+pillow>=10.0.0
 
 # Hardware & Raspberry Pi (라즈베리파이 환경에서 설치)
 # RPi.GPIO
