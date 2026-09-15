@@ -1,7 +1,15 @@
 import os
+import sys
 import uuid
 import base64
+from pathlib import Path
 from datetime import datetime, timezone
+
+# 프로젝트 루트 경로를 sys.path에 추가하여 어디서 실행하든 모듈 임포트 가능하도록 보장
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from flask import Flask, render_template, request, jsonify
 from flask_restx import Api, Resource, fields, reqparse
 from werkzeug.datastructures import FileStorage

@@ -16,9 +16,12 @@ def get_storage_client():
         return _client
     
     cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if cred_path and os.path.exists(cred_path):
-        _client = storage.Client.from_service_account_json(cred_path)
-    else:
+    if cred_path:
+        if not os.path.isabs(cred_path):
+            cred_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), cred_path)
+        if os.path.exists(cred_path):
+            _client = storage.Client.from_service_account_json(cred_path)
+    if _client is None:
         # GCP Cloud Run 환경에서는 서비스 계정 ADC(기본 자격 증명)로 자동 인증
         _client = storage.Client(project=GCP_PROJECT_ID)
     

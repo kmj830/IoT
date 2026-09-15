@@ -11,6 +11,8 @@ def init_firebase():
         return True
     
     cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "secrets/firebase-key.json")
+    if not os.path.isabs(cred_path):
+        cred_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), cred_path)
     if os.path.exists(cred_path):
         try:
             cred = credentials.Certificate(cred_path)
