@@ -24,15 +24,17 @@ def run_interactive_simulator():
 
     while True:
         print("\n[테스트 메뉴를 선택하세요]")
-        print("  1. 📊 실내 온습도/조도/간식 텔레메트리 1회 전송")
-        print("  2. 🚨 이상 짖음 감지 시뮬레이션 (카메라 캡처 ➔ GCS 업로드 ➔ FCM 푸시)")
-        print("  3. 🍖 SG-90 간식 투출 서보모터 단독 구동 테스트")
-        print("  4. 📥 클라우드 원격 명령 큐 폴링 및 실행 (ACK 완료 보고)")
-        print("  5. 🚀 엣지 클라이언트 백그라운드 자동 루프 가동 (정기 보고 + 상시 감시)")
+        print("  1. 📊 실내 온습도/조도/간식 텔레메트리 1회 전송 (야간 LED 자동 연동)")
+        print("  2. 🚨 이상 짖음 감지 시뮬레이션 (YAMNet AI ➔ GCS 업로드 ➔ FCM 푸시)")
+        print("  3. 🚪 현관문 관심구역(ROI) 배회 행동 감지 시뮬레이션 (Ogata 2016 논문 기반)")
+        print("  4. 💡 조도 센서 연동 야간 안심 LED 자동 점등/소등 테스트")
+        print("  5. 🍖 SG-90 간식 투출 서보모터 단독 구동 테스트")
+        print("  6. 📥 클라우드 원격 명령 큐 폴링 및 실행 (ACK 완료 보고)")
+        print("  7. 🚀 엣지 클라이언트 백그라운드 자동 루프 가동 (정기 보고 + 상시 감시)")
         print("  0. 🛑 시뮬레이터 종료")
         
         try:
-            choice = input("\n👉 선택 (0~5): ").strip()
+            choice = input("\n👉 선택 (0~7): ").strip()
         except (KeyboardInterrupt, EOFError):
             print("\n시뮬레이터를 종료합니다.")
             break
@@ -46,12 +48,23 @@ def run_interactive_simulator():
             print(f"\n🚨 [시뮬레이션] 짖음 소음 {sound}dB 발생! (AI 신뢰도 {int(conf*100)}%)")
             client.report_bark_event(sound_db=sound, confidence=conf)
         elif choice == "3":
+            print("\n🚪 [시뮬레이션] 현관문 관심구역(ROI) 장시간 배회 감지 테스트...")
+            client.report_doorway_pacing_event(duration_sec=8.4, motion_ratio=0.32)
+        elif choice == "4":
+            from hardware.actuators.alerts import update_night_soothing_led
+            print("\n💡 [테스트] 야간 안심 LED 조도 연동 테스트:")
+            print("  - 어두운 방 시뮬레이션 (80 Lux):")
+            update_night_soothing_led(80, threshold=150)
+            time.sleep(1)
+            print("  - 밝은 방 시뮬레이션 (320 Lux):")
+            update_night_soothing_led(320, threshold=150)
+        elif choice == "5":
             print("\n🍖 간식 서보모터 구동 테스트 중...")
             dispense_treat(amount=1)
-        elif choice == "4":
+        elif choice == "6":
             print("\n📥 클라우드 대기열 명령 확인 중...")
             client.poll_commands()
-        elif choice == "5":
+        elif choice == "7":
             print("\n🚀 엣지 클라이언트 연속 데몬을 시작합니다. (중단: Ctrl+C)")
             try:
                 client.start()
@@ -61,7 +74,7 @@ def run_interactive_simulator():
             print("\n시뮬레이터를 종료합니다.")
             break
         else:
-            print("⚠️ 잘못된 입력입니다. 0부터 5까지 숫자를 입력해주세요.")
+            print("⚠️ 잘못된 입력입니다. 0부터 7까지 숫자를 입력해주세요.")
 
 
 if __name__ == "__main__":

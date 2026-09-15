@@ -22,8 +22,12 @@ except ImportError:
 from hardware.config import BARK_CONFIDENCE_THRESHOLD
 
 # AudioSet 클래스 인덱스 (YAMNet 모델 기준)
-# 71: Dog, 72: Bark, 73: Yip, 74: Howl, 75: Bow-wow
-DOG_BARK_CLASS_INDICES = [71, 72, 73, 74, 75]
+# 70: Bark, 71: Yip, 72: Howl, 73: Bow-wow, 74: Growling, 75: Whimper
+DOG_BARK_CLASS_INDICES = [70, 71, 72, 73, 74, 75]
+
+DEFAULT_YAMNET_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "yamnet.tflite"
+)
 
 
 class YamnetBarkDetector:
@@ -32,7 +36,7 @@ class YamnetBarkDetector:
     - USB 마이크 오디오 수집 (16kHz mono)
     - 0.975초 윈도우 추론 (~50ms)
     """
-    def __init__(self, model_path=None):
+    def __init__(self, model_path=DEFAULT_YAMNET_PATH):
         self.model_path = model_path
         self.interpreter = None
         self._init_model()

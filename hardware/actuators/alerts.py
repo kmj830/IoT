@@ -42,3 +42,27 @@ def set_status_led(state: bool):
 
     # print(f"💡 [LED SIM] 상태: {'ON' if state else 'OFF'}")
     return True
+
+
+_night_led_state = False
+
+def update_night_soothing_led(light_level: int, threshold: int = 150) -> bool:
+    """
+    실내 조도(Lux)에 따라 야간 안심 조명(D7 LED)을 자동으로 켜거나 끕니다.
+    히스테리시스(30 Lux 마진)를 적용하여 경계값에서 조명이 깜빡이는 현상을 방지합니다.
+    """
+    global _night_led_state
+    if light_level < threshold and not _night_led_state:
+        _night_led_state = True
+        set_status_led(True)
+        print(f"💡 [Night LED] 실내 어두움 감지 ({light_level}Lux < {threshold}Lux) ➔ 야간 안심 조명 자동 점등 (ON)")
+    elif light_level > (threshold + 30) and _night_led_state:
+        _night_led_state = False
+        set_status_led(False)
+        print(f"💡 [Night LED] 실내 밝아짐 감지 ({light_level}Lux > {threshold+30}Lux) ➔ 야간 안심 조명 자동 소등 (OFF)")
+    return _night_led_state
+
+def get_night_led_status() -> bool:
+    """현재 야간 안심 조명 켜짐 여부 반환"""
+    return _night_led_state
+

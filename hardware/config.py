@@ -34,3 +34,10 @@ TREAT_CONTAINER_FULL_CM = 4.0
 # 5. 이상 짖음 감지 임계값
 SOUND_ALERT_THRESHOLD = 70       # Grove 사운드센서 70dB 초과 시 AI 추론 트리거
 BARK_CONFIDENCE_THRESHOLD = 0.35 # YAMNet 짖음 신뢰도 임계값
+
+# 6. 야간 안심 조명 (조도 센서 연동)
+NIGHT_LIGHT_THRESHOLD_LUX = 150  # 150 Lux 이하 시 야간 안심 LED 자동 점등
+
+# 7. 현관문 배회(ROI) 감지 임계값 (Ogata 2016 논문 기반)
+DOORWAY_STAY_THRESHOLD_SEC = 5.0 # 현관 구역 5초 이상 지속 체류 시 분리불안 배회 경보 트리거
+

@@ -18,15 +18,18 @@ from hardware.config import (
     TELEMETRY_INTERVAL_SEC,
     COMMAND_POLL_INTERVAL_SEC,
     SOUND_ALERT_THRESHOLD,
-    CLOUD_RUN_URL
+    CLOUD_RUN_URL,
+    NIGHT_LIGHT_THRESHOLD_LUX,
+    DOORWAY_STAY_THRESHOLD_SEC
 )
 from hardware.sensors.environment import get_all_environment_telemetry
 from hardware.sensors.sound import detect_noise_spike
 from hardware.actuators.servo import dispense_treat
 from hardware.actuators.speaker import play_audio_file
-from hardware.actuators.alerts import trigger_alert_beep, set_status_led
+from hardware.actuators.alerts import trigger_alert_beep, set_status_led, update_night_soothing_led, get_night_led_status
 from hardware.camera import capture_snapshot
 from hardware.ai.yamnet_detector import analyze_audio_for_bark
+from hardware.ai.roi_motion_detector import check_doorway_pacing
 
 
 class DogMateEdgeClient:
@@ -63,11 +66,15 @@ class DogMateEdgeClient:
             "light_level": data["light_level"],
             "treat_percent": data["treat_percent"]
         }
+        # 조도 센서 기반 야간 안심 조명 자동 제어
+        is_night = update_night_soothing_led(data["light_level"], threshold=NIGHT_LIGHT_THRESHOLD_LUX)
+        night_str = " | 💡 [야간LED 켜짐]" if is_night else ""
+
         url = f"{self.api_url}/api/v1/devices/telemetry"
         try:
             res = requests.post(url, json=payload, timeout=6)
             if res.status_code in [200, 201]:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] 📊 [Telemetry] 🌡️ {data['temperature']}℃ | 💧 {data['humidity']}% | ☀️ {data['light_level']}Lux | 🍖 {data['treat_percent']}% 전송 완료")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] 📊 [Telemetry] 🌡️ {data['temperature']}℃ | 💧 {data['humidity']}% | ☀️ {data['light_level']}Lux | 🍖 {data['treat_percent']}%{night_str} 전송 완료")
                 return True
             else:
                 print(f"⚠️ [Telemetry Warning] 응답 코드 {res.status_code}: {res.text}")
@@ -76,8 +83,43 @@ class DogMateEdgeClient:
         return False
 
     # ==========================================
-    # 2. 이상 짖음 이벤트 리포트 (카메라 + AI)
+    # 2. 이상행동 이벤트 리포트 (짖음 & 현관문 배회)
     # ==========================================
+    def report_doorway_pacing_event(self, duration_sec=6.5, motion_ratio=0.25):
+        """현관문 관심 구역(ROI) 장시간 서성임(배회 행동) 감지 시 사진 캡처 및 클라우드 업로드"""
+        now = time.time()
+        if now - self.last_bark_report_time < self.bark_cooldown_sec:
+            return  # 쿨다운 중
+        self.last_bark_report_time = now
+
+        print(f"\n🚪 [{datetime.now().strftime('%H:%M:%S')}] [ALERT] 현관문 장시간 서성임(배회) 감지! (지속: {duration_sec}초, 모션비율: {int(motion_ratio*100)}%)")
+        set_status_led(True)
+        trigger_alert_beep(0.2)
+
+        # 현관문 배회 전용 시각화 스냅샷 캡처
+        image_bytes = capture_snapshot(event_type="pacing", detail=f"{duration_sec}s")
+
+        url = f"{self.api_url}/api/v1/devices/events/bark"
+        files = {'image': ('door_pacing.jpg', image_bytes, 'image/jpeg')}
+        data = {
+            'device_id': self.device_id,
+            'sound_db': 55, # 생활 소음 상태이나 비전 배회 감지
+            'confidence': 0.95
+        }
+        try:
+            print("☁️ [Cloud] 현관문 배회 이상행동 이벤트 및 캡처 사진 업로드 중...")
+            res = requests.post(url, data=data, files=files, timeout=12)
+            if res.status_code in [200, 201]:
+                resp_json = res.json()
+                print(f"✅ [Cloud] 현관문 배회 이벤트 리포트 완료! (Event ID: {resp_json.get('event_id')})")
+                print(f"🔗 [Cloud GCS Photo]: {resp_json.get('view_url')}")
+            else:
+                print(f"❌ [Cloud Error] 업로드 응답 실패: {res.status_code} - {res.text}")
+        except Exception as e:
+            print(f"❌ [Cloud Error] 배회 이벤트 전송 실패: {e}")
+        finally:
+            set_status_led(False)
+
     def report_bark_event(self, sound_db=78, confidence=0.89):
         """이상 짖음 감지 시 현장 사진 캡처 후 클라우드로 긴급 업로드"""
         now = time.time()
@@ -231,6 +273,8 @@ if __name__ == "__main__":
     parser.add_argument("--local", action="store_true", help="로컬 서버(http://localhost:5001) 적용")
     parser.add_argument("--test-bark", action="store_true", help="이상 짖음 감지 및 사진 업로드 즉시 테스트")
     parser.add_argument("--test-feed", action="store_true", help="간식 서보모터 투출 즉시 테스트")
+    parser.add_argument("--test-pacing", action="store_true", help="현관문 배회(ROI) 감지 및 스냅샷 업로드 즉시 테스트")
+    parser.add_argument("--test-night-led", action="store_true", help="조도 센서 연동 야간 안심 LED 자동 점등 테스트")
     
     args = parser.parse_args()
 
@@ -245,6 +289,16 @@ if __name__ == "__main__":
     if args.test_bark:
         print("🧪 [Test Mode] 짖음 감지 + 카메라 캡처 + GCS/FCM 업로드 단독 테스트 실행")
         client.report_bark_event(sound_db=82, confidence=0.92)
+    elif args.test_pacing:
+        print("🧪 [Test Mode] 현관문 관심구역(ROI) 배회 행동 감지 단독 테스트 실행")
+        client.report_doorway_pacing_event(duration_sec=7.2, motion_ratio=0.28)
+    elif args.test_night_led:
+        print("🧪 [Test Mode] 야간 안심 LED 제어 테스트 실행")
+        print("1. 어두운 환경 시뮬레이션 (80 Lux):")
+        update_night_soothing_led(80, threshold=150)
+        time.sleep(1)
+        print("2. 밝은 환경 시뮬레이션 (350 Lux):")
+        update_night_soothing_led(350, threshold=150)
     elif args.test_feed:
         print("🧪 [Test Mode] 간식 서보모터 투출 단독 테스트 실행")
         dispense_treat(amount=1)
