@@ -1,6 +1,15 @@
 # Web Framework
 flask>=3.0.0
 python-dotenv>=1.0.0
+gunicorn>=21.0.0
+
+# Database (PostgreSQL / Supabase)
+psycopg2-binary>=2.9.9
+
+# Cloud Storage & Firebase (GCP)
+google-cloud-storage>=2.14.0
+firebase-admin>=6.5.0
+requests>=2.31.0
 
 # Hardware & Raspberry Pi (라즈베리파이 환경에서 설치)
 # RPi.GPIO
