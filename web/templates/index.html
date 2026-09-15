@@ -3,22 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT 기초설계 모니터링 대시보드</title>
+    <title>🐶 멍메이트(DogMate) IoT 스마트 모니터링</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>🌐 IoT 기초설계 모니터링 시스템</h1>
-        <p>팀원: 김민중, 김영재</p>
-    </header>
-    <main>
-        <div class="card">
-            <h2>센서 데이터 모니터링</h2>
-            <p>센서 및 웹 연동 실습(11~12주차) 시 데이터가 표시되는 대시보드입니다.</p>
-            <div id="sensor-data">
-                <p>시스템 준비 중...</p>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <span class="badge">금오공과대학교 2026-2 IoT기초설계</span>
+                <span class="badge badge-cost">$0 Free-Tier Architecture</span>
             </div>
-        </div>
-    </main>
+            <h1>🐶 멍메이트(DogMate) IoT 케어 시스템</h1>
+            <p>반려견 분리불안 완화 및 이상 짖음 감지 스마트홈 케어 솔루션</p>
+            <div class="header-links">
+                <a href="/docs" class="btn btn-swagger" target="_blank">📖 대화형 Swagger API 문서 열기 (/docs)</a>
+                <a href="/api/v1/health" class="btn btn-health" target="_blank">🩺 클라우드 헬스체크 (/health)</a>
+            </div>
+        </header>
+
+        <!-- 인프라 상태 바 -->
+        <section class="infra-bar">
+            <div class="infra-item">
+                <span class="dot dot-green"></span>
+                <span>Google Cloud Run: <strong>정상 가동</strong></span>
+            </div>
+            <div class="infra-item">
+                <span class="dot dot-green"></span>
+                <span>Supabase PostgreSQL 15: <strong>연결됨</strong></span>
+            </div>
+            <div class="infra-item">
+                <span class="dot dot-green"></span>
+                <span>Google Cloud Storage: <strong>정상</strong></span>
+            </div>
+            <div class="infra-item">
+                <span class="dot dot-green"></span>
+                <span>Firebase FCM: <strong>준비 완료</strong></span>
+            </div>
+        </section>
+
+        <!-- 디바이스 모니터링 카드 그리드 -->
+        <main class="grid">
+            <!-- 디바이스 기본 정보 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📡 디바이스 정보</h2>
+                    <span id="device-status-badge" class="status-badge online">온라인</span>
+                </div>
+                <div class="card-body">
+                    <p><strong>디바이스 ID:</strong> <code id="device-id">dogmate-rpi3b-01</code></p>
+                    <p><strong>하드웨어:</strong> Raspberry Pi 3B (GrovePi+)</p>
+                    <p><strong>마지막 하트비트:</strong> <span id="last-heartbeat">-</span></p>
+                    <hr>
+                    <h3>🎮 원격 인터랙티브 제어</h3>
+                    <button id="btn-feed" class="btn btn-action" onclick="dispenseTreat()">🍖 원격 간식 급여하기</button>
+                    <p id="feed-msg" class="msg"></p>
+                </div>
+            </div>
+
+            <!-- 실시간 환경 센서 -->
+            <div class="card">
+                <h2>🌡️ 실내 환경 센서 (Grove)</h2>
+                <div class="sensor-grid">
+                    <div class="sensor-box">
+                        <span class="sensor-label">실내 온도</span>
+                        <span class="sensor-value" id="val-temp">--.- ℃</span>
+                    </div>
+                    <div class="sensor-box">
+                        <span class="sensor-label">실내 습도</span>
+                        <span class="sensor-value" id="val-hum">--.- %</span>
+                    </div>
+                    <div class="sensor-box">
+                        <span class="sensor-label">실내 조도</span>
+                        <span class="sensor-value" id="val-light">--- Lux</span>
+                    </div>
+                    <div class="sensor-box highlight">
+                        <span class="sensor-label">간식 잔여량</span>
+                        <span class="sensor-value" id="val-treat">-- %</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 최근 이상 짖음 감지 내역 -->
+            <div class="card full-width">
+                <h2>🚨 최근 이상 짖음 감지 내역 (YAMNet AI + PiCam)</h2>
+                <div id="events-container">
+                    <p class="empty-msg">감지된 이상 짖음 이벤트가 없습니다.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const DEVICE_ID = 'dogmate-rpi3b-01';
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch(`/api/v1/app/status?device_id=${DEVICE_ID}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                document.getElementById('last-heartbeat').innerText = data.last_heartbeat ? new Date(data.last_heartbeat).toLocaleString('ko-KR') : '기록 없음';
+                
+                if (data.telemetry) {
+                    document.getElementById('val-temp').innerText = (data.telemetry.temperature ?? '--') + ' ℃';
+                    document.getElementById('val-hum').innerText = (data.telemetry.humidity ?? '--') + ' %';
+                    document.getElementById('val-light').innerText = (data.telemetry.light_level ?? '--') + ' Lux';
+                    document.getElementById('val-treat').innerText = (data.telemetry.treat_percent ?? '--') + ' %';
+                }
+
+                const badge = document.getElementById('device-status-badge');
+                if (data.online) {
+                    badge.className = 'status-badge online';
+                    badge.innerText = '온라인';
+                } else {
+                    badge.className = 'status-badge offline';
+                    badge.innerText = '오프라인';
+                }
+            } catch (err) {
+                console.error('Status fetch error:', err);
+            }
+        }
+
+        async function fetchEvents() {
+            try {
+                const res = await fetch(`/api/v1/app/events?device_id=${DEVICE_ID}&limit=5`);
+                if (!res.ok) return;
+                const events = await res.json();
+                const container = document.getElementById('events-container');
+                
+                if (!events || events.length === 0) {
+                    container.innerHTML = '<p class="empty-msg">감지된 이상 짖음 이벤트가 없습니다.</p>';
+                    return;
+                }
+
+                container.innerHTML = events.map(ev => `
+                    <div class="event-item">
+                        <div class="event-info">
+                            <strong>${new Date(ev.timestamp).toLocaleString('ko-KR')}</strong>
+                            <span class="badge-db">소음: ${ev.sound_db}dB</span>
+                            <span class="badge-conf">AI 신뢰도: ${(ev.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                        ${ev.image_url ? `<a href="${ev.image_url}" target="_blank" class="event-photo-link">📷 캡처 사진 보기</a>` : ''}
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Events fetch error:', err);
+            }
+        }
+
+        async function dispenseTreat() {
+            const btn = document.getElementById('btn-feed');
+            const msg = document.getElementById('feed-msg');
+            btn.disabled = true;
+            msg.innerText = '간식 급여 명령 전달 중...';
+            
+            try {
+                const res = await fetch('/api/v1/app/feed', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({device_id: DEVICE_ID, amount: 1})
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msg.innerText = '✅ 간식 투출 명령이 성공적으로 전달되었습니다!';
+                    msg.style.color = '#27ae60';
+                } else {
+                    msg.innerText = '❌ 오류: ' + (data.error || '전송 실패');
+                    msg.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                msg.innerText = '❌ 통신 에러 발생';
+                msg.style.color = '#e74c3c';
+            } finally {
+                setTimeout(() => { btn.disabled = false; }, 2000);
+            }
+        }
+
+        // 초기 로드 및 10초 주기 갱신
+        fetchStatus();
+        fetchEvents();
+        setInterval(fetchStatus, 10000);
+    </script>
 </body>
 </html>
