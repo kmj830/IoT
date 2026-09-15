@@ -11,6 +11,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from flask import Flask, render_template, request, jsonify, Response
+from flask_cors import CORS
 from flask_restx import Api, Resource, fields, reqparse
 from werkzeug.datastructures import FileStorage
 from dotenv import load_dotenv
@@ -22,6 +23,7 @@ from web.fcm import send_bark_alert
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})  # 모바일 앱 및 웹 클라이언트 교차 출처(CORS) 전체 허용
 app.config['RESTX_MASK_SWAGGER'] = False  # X-Fields 헤더 비활성화
 app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 

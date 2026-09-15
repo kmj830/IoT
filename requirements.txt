@@ -1,6 +1,7 @@
 # Web Framework
 flask>=3.0.0
 flask-restx>=1.3.0
+flask-cors>=4.0.0
 python-dotenv>=1.0.0
 gunicorn>=21.0.0
 
